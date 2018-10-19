@@ -25,8 +25,8 @@ module openila_trigger #(
 	input wire [W_DATA-1:0] stage2_mask
 );
 
-wire match_stage1 = !((stage1_val ^ sample) & stage1_mask);
-wire match_stage2 = !((stage2_val ^ sample) & stage2_mask);
+wire match_stage1 = ~|((stage1_val ^ sample) & stage1_mask);
+wire match_stage2 = ~|((stage2_val ^ sample) & stage2_mask);
 
 // state is simply which trigger stage we are at
 reg sm1_state;

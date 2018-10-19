@@ -37,14 +37,18 @@ module openila_compress #(
 	parameter W_MEM = W_SAMPLE + 1,
 	parameter SIMPLE_MODE = 1
 ) (
-	input wire  clk,
-	input wire  rst_n,
+	input wire                 clk,
+	input wire                 rst_n,
 	input wire  [W_SAMPLE-1:0] din,
-	input wire  din_valid,
+	input wire                 din_valid,
 
-	output wire [W_MEM-1:0] dout,
-	output reg  dout_valid
+	output reg  [W_MEM-1:0]    dout,
+	output reg                 dout_valid
 );
+
+`include "openila_functions.vh"
+
+localparam W_INDEX = clogb2(W_SAMPLE);
 
 // Keep track of previous data value and test for transitions
 
@@ -64,7 +68,7 @@ end
 
 reg stable_prev;
 reg [W_COUNT-1:0] stable_ctr;
-reg stable_ctr_overf;
+reg stable_ctr_over;
 
 always @ (posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
@@ -76,7 +80,7 @@ always @ (posedge clk or negedge rst_n) begin
 		stable_ctr_over <= 1'b0;
 		if (stable) begin
 			stable_ctr <= stable_ctr + 1'b1;
-			stable_ctr_overf <= &stable_ctr;
+			stable_ctr_over <= &stable_ctr;
 		end else begin
 			stable_ctr <= {W_COUNT{1'b0}};
 		end
@@ -149,7 +153,7 @@ end else begin: full_mode
 	end
 
 	// Compression
-
+/*
 	always @ (posedge clk or negedge rst_n) begin
 		if (!rst_n) begin
 			cword <= {W_MEM{1'b0}};
@@ -171,47 +175,47 @@ end else begin: full_mode
 				end
 			end
 		end
+	end
 
-		// Word batching
+	// Word batching
 
-		reg [W_MEM-1:0]             word_buf;
-		reg [clogb2(W_MEM+1)-1:0]   word_buf_level;
+	reg [W_MEM-1:0] word_buf;
+	reg [clogb2(W_MEM+1)-1:0] word_buf_level;
 
-		// Big-ass shifter, hold onto your butts
-		wire [clogb2(2*W_MEM+1)-1:0] cword_shamt =
-			2'h2 * W_MEM[clogb2(2*W_MEM+1)-1:0] - (word_buf_level + cword_size);
+	// Big-ass shifter, hold onto your butts
+	wire [clogb2(2*W_MEM+1)-1:0] cword_shamt =
+		2'h2 * W_MEM[clogb2(2*W_MEM+1)-1:0] - (word_buf_level + cword_size);
 
-		wire [2*W_MEM-1:0]           word_data_merged =
-			{word_buf, {W_MEM{1'b0}} |
-			(cword & {W_MEM*2{1'b0}} << cword_shamt) &
-			~({W_MEM*2{1'b1}} << cword_shamt);
-			
-		wire [clogb2(2*W_MEM+1)-1:0] available_word_data = {2'b0, word_buf_level} + cword_size;
+	wire [2*W_MEM-1:0] word_data_merged =
+		{word_buf, {W_MEM{1'b0}} |
+		(cword & {W_MEM*2{1'b0}} << cword_shamt) &
+		~({W_MEM*2{1'b1}} << cword_shamt)i;
+		
+	wire [clogb2(2*W_MEM+1)-1:0] available_word_data = {2'b0, word_buf_level} + cword_size;
 
-		always @ (posedge clk or negedge rst_n) begin
-			if (!rst_n) begin
-				word_buf <= {W_MEM{1'b0}};
-				word_buf_level <= {clogb2(W_MEM+1){1'b0}};
-				dout <= {W_MEM{1'b0}};
-			end else if (din_valid) begin
-				dout <= word_data_merged[W_MEM +: W_MEM];
+	always @ (posedge clk or negedge rst_n) begin
+		if (!rst_n) begin
+			word_buf <= {W_MEM{1'b0}};
+			word_buf_level <= {clogb2(W_MEM+1){1'b0}};
+			dout <= {W_MEM{1'b0}};
+		end else if (din_valid) begin
+			dout <= word_data_merged[W_MEM +: W_MEM];
+			dout_valid <= 1'b0;
+
+			if (available_word_data >= W_MEM) begin
+				dout_valid <= 1'b1;
+				word_buf <= word_data_merged[0 +: W_MEM];
+				word_buf_level <= available_word_data - W_MEM;
+			end else begin
 				dout_valid <= 1'b0;
-
-				if (available_word_data >= W_MEM) begin
-					dout_valid <= 1'b1;
-					word_buf <= word_data_merged[0 +: W_MEM];
-					word_buf_level <= available_word_data - W_MEM;
-				end else begin
-					dout_valid <= 1'b0;
-					word_buf <= word_data_merged[0 +: W_MEM];
-					word_buf_level <
-				end
+				word_buf <= word_data_merged[0 +: W_MEM];
+				word_buf_level <
 			end
 		end
 	end
+	*/
 
 end
 endgenerate
 
-end
 endmodule

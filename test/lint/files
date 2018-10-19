@@ -1,0 +1,2 @@
+SRCS=../../hdl/openila_compress.v ../../hdl/openila_trigger.v ../../hdl/openila_core.v ../../hdl/openila_mem.v
+INCDIRS=../../hdl
